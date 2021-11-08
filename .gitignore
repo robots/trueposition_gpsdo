@@ -1,0 +1,7 @@
+FLASH_RUN/*
+various/*
+toolchain/*
+*.o
+*.pyc
+*.lst
+*.d
