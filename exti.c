@@ -11,7 +11,7 @@ uint8_t exti_irqchan[EXTI_COUNT] = {
 	EXTI9_5_IRQn, EXTI9_5_IRQn, EXTI9_5_IRQn, EXTI9_5_IRQn, EXTI9_5_IRQn,
 	EXTI15_10_IRQn, EXTI15_10_IRQn, EXTI15_10_IRQn, EXTI15_10_IRQn, EXTI15_10_IRQn, EXTI15_10_IRQn,
 	// below are internal events
-	PVD_IRQn, RTCAlarm_IRQn,// OTG_FS_WKUP_IRQn, ETH_WKUP_IRQn
+	PVD_IRQn, RTC_Alarm_IRQn, //OTG_FS_WKUP_IRQn, ETH_WKUP_IRQn
 };
 
 void exti_set_handler(uint8_t exti, exti_fnc_t fnc)
@@ -27,31 +27,31 @@ void exti_enable(uint8_t exti, EXTITrigger_TypeDef trig, uint8_t gpio)
 	if (exti >= EXTI_COUNT)
 		return;
 
-	EXTI_InitTypeDef EXTI_InitStructure = {
-		.EXTI_Mode = EXTI_Mode_Interrupt,
-		.EXTI_Trigger = trig,
-		.EXTI_Line = 1 << exti,
-		.EXTI_LineCmd = ENABLE,
-	};
-
-	NVIC_InitTypeDef EXT_Int = {
-		.NVIC_IRQChannelPreemptionPriority = 10,
-		.NVIC_IRQChannelSubPriority = 0,
-		.NVIC_IRQChannelCmd = ENABLE,
-		.NVIC_IRQChannel = exti_irqchan[exti],
-	};
-
-	if (exti < 16) {
-#ifdef STM32F107RC
-		GPIO_EXTILineConfig(gpio, exti);
-#endif
-#ifdef STM32F417VG
-		SYSCFG_EXTILineConfig(gpio, exti);
-#endif
+	EXTI->IMR |= 1 << exti;
+	if (trig == EXTI_Trigger_Rising_Falling) {
+		EXTI->RTSR |= 1 << exti;
+		EXTI->FTSR |= 1 << exti;
+	} else if (trig == EXTI_Trigger_Rising) {
+		EXTI->RTSR |= 1 << exti;
+	} else if (trig == EXTI_Trigger_Falling) {
+		EXTI->FTSR |= 1 << exti;
 	}
 
-	EXTI_Init(&EXTI_InitStructure);
-	NVIC_Init(&EXT_Int);
+	if (exti < 16) {
+		AFIO->EXTICR[exti >> 0x02] &= ~(((uint32_t)0x0F) << (0x04 * (exti & 0x03)));
+		AFIO->EXTICR[exti >> 0x02] |= (((uint32_t)gpio) << (0x04 * (exti & 0x03)));
+	}
+
+	NVIC_EnableIRQ(exti_irqchan[exti]);
+	NVIC_SetPriority(exti_irqchan[exti], 10);
+}
+
+void exti_reenable(uint8_t exti)
+{
+	if (exti >= EXTI_COUNT)
+		return;
+
+	EXTI->IMR |= 1 << exti;
 }
 
 void exti_disable(uint8_t exti)
@@ -59,14 +59,8 @@ void exti_disable(uint8_t exti)
 	if (exti >= EXTI_COUNT)
 		return;
 
-	NVIC_InitTypeDef EXT_Int = {
-		.NVIC_IRQChannelPreemptionPriority = 14,
-		.NVIC_IRQChannelSubPriority = 0,
-		.NVIC_IRQChannelCmd = DISABLE,
-		.NVIC_IRQChannel = exti_irqchan[exti],
-	};
-
-	NVIC_Init(&EXT_Int);
+	EXTI->PR = 1 << exti; 
+	EXTI->IMR &= ~(1 << exti);
 }
 
 void exti_trigger(uint8_t exti)
@@ -74,7 +68,7 @@ void exti_trigger(uint8_t exti)
 	if (exti >= 20)
 		return;
 
-  EXTI->SWIER |= 1 << (exti);
+	EXTI->SWIER |= 1 << (exti);
 }
 
 int exti_status(uint8_t exti)
@@ -87,10 +81,10 @@ int exti_status(uint8_t exti)
 
 #define EXEC(x) \
 	do { \
-		if (EXTI_GetITStatus(1 << (x))) { \
+		if (EXTI->PR & EXTI->IMR & (1 << (x))) { \
 			if (exti_fnc[(x)]) \
 				exti_fnc[(x)]();\
-			EXTI_ClearITPendingBit(1 << (x)); \
+			EXTI->PR = 1 << (x); \
 		} \
 	} while (0);
 
@@ -148,12 +142,3 @@ void RTCAlarm_IRQHandler(void)
 	EXEC(17);
 }
 
-void OTG_FS_WKUP_IRQHandler(void)
-{
-	EXEC(18);
-}
-
-void ETH_WKUP_IRQHandler(void)
-{
-	EXEC(19);
-}

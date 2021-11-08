@@ -6,7 +6,7 @@
  * converts string in format "YYYY.XX" to int YYYYXX
  * where number of X's is x
  */
-uint32_t atoi_float(char **in, int x)
+uint32_t atou_float(char **in, int x)
 {
 	char *p = *in;
 	uint32_t out = 0;
@@ -40,4 +40,54 @@ uint32_t atoi_float(char **in, int x)
 	}
 
 	return out;
+}
+
+/*
+ * converts string in format "YYYY.XX" to int YYYYXX
+ * where number of X's is x
+ */
+int32_t atoi_float(char **in, int x)
+{
+	char *p = *in;
+	uint32_t out = 0;
+	int i = x;
+	int dot = 0; // are we beyond the "."
+	int sign = 1;
+
+	if (*p == '-') {
+		sign = -1;
+		p++;
+	}
+	
+	if (*p == '+') {
+		p++;
+	}
+
+	while ((*p >= '0' && *p <= '9') || *p == '.') {
+		if (*p == '.') {
+			dot = 1;
+			p++;
+			continue;
+		}
+
+		if (dot == 1) {
+			if (i == 0) {
+				break;
+			}
+			i--;
+		}
+
+		out *= 10;
+		out += *p - '0';
+		p++;
+	}
+
+	*in = p;
+
+	while (i > 0) {
+		out *= 10;
+		i--;
+	}
+
+	return sign * out;
 }

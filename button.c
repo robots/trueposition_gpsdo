@@ -1,42 +1,68 @@
 #include "platform.h"
 
 #include "gpio.h"
-#include "ui.h"
-#include "gps.h"
+#include "systime.h"
+
 #include "button.h"
 
-#define BUTTON_LONG 40
-#define BUTTON_SHORT 2
+#define BUTTON_LONG 4000
+#define BUTTON_SHORT 100
 
 const struct gpio_init_table_t button_gpio[] = {
 	{
 		.gpio = GPIOA,
 		.pin = GPIO_Pin_15,
-		.mode = GPIO_Mode_IPU,
-		.speed = GPIO_Speed_50MHz,
+		.mode = GPIO_MODE_IPU,
+		.speed = GPIO_SPEED_HIGH,
+	},
+	{
+		.gpio = GPIOA,
+		.pin = GPIO_Pin_12,
+		.mode = GPIO_MODE_IPU,
+		.speed = GPIO_SPEED_HIGH,
 	},
 };
 
-static int button_counter;
+struct button_state_t {
+	uint32_t t;
+	uint32_t state;
+} button_state[ARRAY_SIZE(button_gpio)];
+
+
+button_cb_t button_cb;
 
 void button_init(void)
 {
-	GPIO_InitBatch(button_gpio, ARRAY_SIZE(button_gpio));
-	button_counter = 0;
+	gpio_init(button_gpio, ARRAY_SIZE(button_gpio));
+	for (uint32_t i = 0; i < ARRAY_SIZE(button_gpio); i++) {
+		button_state[i].t = systime_get();
+		button_state[i].state = gpio_get(&button_gpio[i]);
+	}
+}
+
+void button_set_ev_handler(button_cb_t cb)
+{
+	button_cb = cb;
 }
 
 void button_process(void)
 {
-	if (GPIO_Get(&button_gpio[0]) == 0) {
-		button_counter ++;
-	} else {
-		if (button_counter >= BUTTON_LONG) {
-			gps_survey_start();
-		} else if (button_counter >= BUTTON_SHORT) {
-			ui_change();
+	for (uint32_t i = 0; i < ARRAY_SIZE(button_gpio); i++) {
+		uint32_t s = gpio_get(&button_gpio[i]);
+
+		if (button_state[i].state != s) {
+			button_state[i].state = s;
+
+			if (s == 0) {
+				button_state[i].t = systime_get();
+			} else {
+				uint32_t diff = systime_get() - button_state[i].t;
+				if (diff >= BUTTON_LONG) {
+					if (button_cb) button_cb(i, BUTTON_EV_LONG);
+				} else if (diff >= BUTTON_SHORT) {
+					if (button_cb) button_cb(i, BUTTON_EV_SHORT);
+				}
+			}
 		}
-
-
-		button_counter = 0;
 	}
 }

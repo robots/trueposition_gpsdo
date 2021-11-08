@@ -1,5 +1,4 @@
 #include "platform.h"
-#include "stm32f10x.h"
 
 #include "gpio.h"
 #include "bsp_i2c.h"
@@ -8,14 +7,14 @@ const struct gpio_init_table_t i2c_gpio[] = {
 	{ // scl
 		.gpio = GPIOB,
 		.pin = GPIO_Pin_6,
-		.mode = GPIO_Mode_AF_OD,
-		.speed = GPIO_Speed_50MHz,
+		.mode = GPIO_MODE_AF_OD,
+		.speed = GPIO_SPEED_HIGH,
 	},
 	{ // sda
 		.gpio = GPIOB,
 		.pin = GPIO_Pin_7,
-		.mode = GPIO_Mode_AF_OD,
-		.speed = GPIO_Speed_50MHz,
+		.mode = GPIO_MODE_AF_OD,
+		.speed = GPIO_SPEED_HIGH,
 	},
 };
 

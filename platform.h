@@ -2,7 +2,8 @@
 #define PLATFORM_H_
 
 #include <stdint.h>
-#include "stm32f10x.h"
+#include <string.h>
+#include "stm32.h"
 
 #define LIKELY(x)          __builtin_expect(!!(x), 1)
 #define UNLIKELY(x)        __builtin_expect(!!(x), 0)
@@ -10,7 +11,9 @@
 #define BV(x)              (1 << (x))
 #define ABS(x)             (((x)>0)?(x):(-(x)))
 #define MAX(x,y)           ((x)>(y)?(x):(y))
+#ifndef MIN
 #define MIN(x,y)           ((x)>(y)?(y):(x))
+#endif
 
 #define PACK               __attribute__ ((packed))
 
@@ -30,6 +33,13 @@
 		{ enum { ASSERT_CONCAT(assert_line_, __LINE__) = 1/(!!(e)) }; }
 #endif
 
+#define MAGIC_KEY  0xDEADBEEF
+
+extern const uint32_t SystemFrequency;
+extern const uint32_t SystemFrequency_SysClk;
+extern const uint32_t SystemFrequency_AHBClk;
+extern const uint32_t SystemFrequency_APB1Clk;
+extern const uint32_t SystemFrequency_APB2Clk;
 
 #endif
 

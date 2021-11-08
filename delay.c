@@ -2,7 +2,7 @@
 #include "delay.h"
 
 // From http://forums.arm.com/index.php?showtopic=13949
- 
+
 volatile uint32_t *DWT_CYCCNT   = (volatile uint32_t *)0xE0001004;
 volatile uint32_t *DWT_CONTROL  = (volatile uint32_t *)0xE0001000;
 volatile uint32_t *SCB_DEMCR    = (volatile uint32_t *)0xE000EDFC;
@@ -11,7 +11,6 @@ uint32_t delay_us_tick;
 
 void delay_init(void)
 {
-  RCC_ClocksTypeDef  rcc_clocks;
 	static int enabled = 0;
 
 
@@ -22,8 +21,7 @@ void delay_init(void)
 		*DWT_CYCCNT = 0; // reset the counter
 		*DWT_CONTROL = *DWT_CONTROL | 1 ; // enable the counter
 
-		RCC_GetClocksFreq(&rcc_clocks);
-		delay_us_tick = rcc_clocks.SYSCLK_Frequency / 1000000;
+		delay_us_tick = SystemFrequency / 1000000;
 	}
 }
  
@@ -45,5 +43,5 @@ void delay_us(uint32_t us)
 
 void delay_ms(uint32_t ms)
 {
-	delay_us(ms * 1000);
+	delay_us(ms*1000);
 }

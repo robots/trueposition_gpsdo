@@ -19,22 +19,22 @@ struct fifo_t {
 	void *buffer;
 };
 
-void FIFO_Init(struct fifo_t *b, void *buffer, uint32_t e_size, uint32_t e_num);
-void FIFO_Reset(struct fifo_t *);
+void fifo_init(struct fifo_t *b, void *buffer, uint32_t e_size, uint32_t e_num);
+void fifo_reset(struct fifo_t *);
 
-uint32_t FIFO_Empty(struct fifo_t *b);
-uint32_t FIFO_GetAvailable(struct fifo_t *b);
-uint32_t FIFO_GetFreeSpace(struct fifo_t *b);
+uint32_t fifo_is_empty(struct fifo_t *b);
+uint32_t fifo_get_read_count(struct fifo_t *b);
+uint32_t fifo_get_write_count(struct fifo_t *b);
 
-void *FIFO_GetReadAddr(struct fifo_t *b);
-void FIFO_ReadDone(struct fifo_t *b);
+void *fifo_get_read_addr(struct fifo_t *b);
+void fifo_read_done(struct fifo_t *b);
 
-void *FIFO_GetWriteAddr(struct fifo_t *b);
-void FIFO_WriteDone(struct fifo_t *b);
+void *fifo_get_write_addr(struct fifo_t *b);
+void fifo_write_done(struct fifo_t *b);
 
-uint32_t FIFO_GetReadSizeCont(struct fifo_t *b);
-void FIFO_ReadDoneSize(struct fifo_t *b, uint32_t size);
+uint32_t fifo_get_read_count_cont(struct fifo_t *b);
+void fifo_read_done_count(struct fifo_t *b, uint32_t size);
 
-void FIFO_WriteMore(struct fifo_t *b, const void *buf, uint32_t cnt);
+void fifo_write_buf(struct fifo_t *b, const void *buf, uint32_t cnt);
 
 #endif

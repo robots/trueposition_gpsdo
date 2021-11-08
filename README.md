@@ -29,6 +29,9 @@ After pressing button (long > 8sec), survey mode is entered. LCD displays survey
 - PA9 - UARTtx - pin 3 on gps
 - PA10 - UARTrx - pin 7 on gps
 
+- PA12 - button 1
+- PA15 - button 2
+
 - PB6 - SCL - to display
 - PB7 - SDA - to display
 

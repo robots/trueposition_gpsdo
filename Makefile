@@ -25,15 +25,14 @@ TCHAIN_PREFIX = arm-none-eabi-
 M    ?= gpsdo
 
 ifeq ($(M), gpsdo)
-BOARD = gpsdo
-TARGET = gpsdo
-CHIP     = STM32F103C8T6
+BOARD    = gpsdo
+TARGET   = gpsdo
+FAMILY   = STM32F1
+CHIP     = STM32F103xB
 F_XTAL   = 8000000
-RAMSIZE  = 0x10000
-LINKERSCRIPTPATH = ./lib/gcc
+LINKERSCRIPTPATH = lib/gcc
 endif
 
-SYSCLOCK_CL = SYSCLK_FREQ_72MHz=72000000
 MCU      = cortex-m3
 
 # *** This example only supports "FLASH_RUN" ***
@@ -58,43 +57,33 @@ OUTDIR = $(RUN_MODE)/$(TARGET)
 # TARGET = $(OUT_FILE)
 
 # Pathes to libraries
-APPLIBDIR = ./lib
+APPLIBDIR = lib
+
 
 STMLIBDIR = $(APPLIBDIR)
 STMSPDDIR = $(STMLIBDIR)/STM32F10x_StdPeriph_Driver
-CMSISDIR  = $(STMLIBDIR)/CMSIS/Core/CM3
+CMSISDIR  = $(STMLIBDIR)/CMSIS_5/
 STMSPDSRCDIR = $(STMSPDDIR)/src
 STMSPDINCDIR = $(STMSPDDIR)/inc
+LIBUSBSTM32DIR = $(APPLIBDIR)/libusb_stm32
+
+BSP = ../bsp/$(BOARD)
+
 
 # List C source files here. (C dependencies are automatically generated.)
 # use file-extension c for "c-only"-files
 
 ## Application:
-SRC = main.c gps.c uart.c bsp_uart.c utils.c
-SRC += LiquidCrystal_I2C.c i2c.c bsp_i2c.c
+SRC = main.c gps.c uart1.c bsp_uart.c utils.c
+#SRC +=  LiquidCrystal_I2C.c i2c.c bsp_i2c.c
+SRC +=  LiquidCrystal_I2C.c i2c_soft.c #LiquidCrystal_I2C.c i2c.c bsp_i2c.c
 SRC += gpio.c delay.c exti.c fifo.c button.c
-SRC += syscall.c ui.c
+SRC += syscall.c ui.c systime.c
 
 
 SRC += $(APPLIBDIR)/gcc/startup_stm32f10x_md.c
-SRC += $(CMSISDIR)/system_stm32f10x.c
-SRC += $(CMSISDIR)/core_cm3.c
+SRC += system_stm32f10x.c
 
-SRC += $(STMSPDSRCDIR)/stm32f10x_i2c.c
-SRC += $(STMSPDSRCDIR)/stm32f10x_usart.c
-SRC += $(STMSPDSRCDIR)/stm32f10x_can.c
-SRC += $(STMSPDSRCDIR)/stm32f10x_exti.c
-SRC += $(STMSPDSRCDIR)/stm32f10x_gpio.c
-SRC += $(STMSPDSRCDIR)/stm32f10x_rcc.c
-SRC += $(STMSPDSRCDIR)/stm32f10x_spi.c
-SRC += $(STMSPDSRCDIR)/stm32f10x_rtc.c
-SRC += $(STMSPDSRCDIR)/stm32f10x_bkp.c
-SRC += $(STMSPDSRCDIR)/stm32f10x_pwr.c
-SRC += $(STMSPDSRCDIR)/stm32f10x_tim.c
-SRC += $(STMSPDSRCDIR)/stm32f10x_dma.c
-SRC += $(STMSPDSRCDIR)/stm32f10x_adc.c
-SRC += $(STMSPDSRCDIR)/stm32f10x_iwdg.c
-SRC += $(STMSPDSRCDIR)/misc.c
 # List C source files here which must be compiled in ARM-Mode (no -mthumb).
 # use file-extension c for "c-only"-files
 ## just for testing, timer.c could be compiled in thumb-mode too
@@ -116,13 +105,19 @@ CPPSRCARM =
 # it will preserve the spelling of the filenames, and gcc itself does
 # care about how the name is spelled on its command-line.
 ASRC = 
+#ASRC += $(LIBUSBSTM32DIR)/src/usbd_stm32f103_devfs_asm.S
 
 # List Assembler source files here which must be assembled in ARM-Mode..
 ASRCARM = 
 
 # List any extra directories to look for include files here.
 #    Each directory must be seperated by a space.
-EXTRAINCDIRS  = $(STMSPDINCDIR) $(CMSISDIR)
+EXTRAINCDIRS  = $(STMSPDINCDIR) $(CMSISDIR)/CMSIS/Core/Include
+EXTRAINCDIRS += $(APPLIBDIR)/stm32h
+EXTRAINCDIRS += $(APPLIBDIR)/libusb_stm32/inc
+EXTRAINCDIRS += $(LIBUSBSTM32DIR)/inc
+EXTRAINCDIRS += ../common
+EXTRAINCDIRS += ../bsp
 
 # List any extra directories to look for library files here.
 # Also add directories where the linker should search for
@@ -160,18 +155,16 @@ DEBUG_FORMAT = dwarf-2
 # Place project-specific -D (define) and/or 
 # -U options for C here.
 CDEFS =
-CDEFS += -DRAMSIZE=$(RAMSIZE)
 CDEFS += -DHSE_VALUE=$(F_XTAL)UL
-CDEFS += -D$(SYSCLOCK_CL)
+CDEFS += -D$(CHIP)
+CDEFS += -D$(FAMILY)
 CDEFS += -D$(BOARD)
+CDEFS += -D__PROGRAM_START
 #CDEFS += -DLWIP_DEBUG
 CDEFS += -DUSE_STDPERIPH_DRIVER
 #CDEFS += -DSTM32_SD_USE_DMA
 CDEFS += -DSTARTUP_DELAY
-# enable modifications in STM's libraries
-CDEFS += -DMOD_MTHOMAS_STMLIB
-# enable modifications in ChaN's FAT-module
-##CDEFS += -DMOD_MTHOMAS_FFAT
+#CDEFS += -DUSBD_ASM_DRIVER
 # enable parameter-checking in STM's library
 #CDEFS += -DUSE_FULL_ASSERT
 
@@ -193,9 +186,7 @@ CDEFS += -D$(VECTOR_TABLE_LOCATION)
 ADEFS += -D$(VECTOR_TABLE_LOCATION)
 endif
 
-CDEFS += -D$(RUN_MODE) -D$(CHIP)
-#CDEFS += -DSW_VER=$$(cat ../.version)
-#CDEFS += -DSW_BUILD=$$(cat ../.build)
+CDEFS += -D$(RUN_MODE)
 ADEFS += -D$(RUN_MODE) -D$(CHIP)
 
 THUMB    = -mthumb
@@ -441,6 +432,7 @@ define COMPILE_C_TEMPLATE
 $(OUTDIR)/$(notdir $(basename $(1))).o : $(1)
 ##	@echo
 	@echo $(MSG_COMPILING) $$< "->" $$@ && 	$(CC) -c $(THUMB) $$(CFLAGS) $$(CONLYFLAGS) $$< -o $$@ 
+##	$(CC) -c $(THUMB) $$(CFLAGS) $$(CONLYFLAGS) $$< -o $$@ 
 endef
 $(foreach src, $(SRC), $(eval $(call COMPILE_C_TEMPLATE, $(src)))) 
 

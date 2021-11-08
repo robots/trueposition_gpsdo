@@ -7,13 +7,14 @@ struct gps_pos_t {
 	uint32_t lat;
 	uint32_t lon;
 	uint32_t amsl;
+	int32_t wgsdiff;
 };
 
 struct gps_extstatus_t {
 	uint32_t survey;
-	uint32_t unk3;
-	uint32_t pos_dilution; // /100
-	uint32_t temperature; //  /100
+	uint32_t sats_used;
+	uint32_t dop; // /100
+	uint32_t temp; //  /100
 	uint32_t unk2;
 };
 
@@ -39,15 +40,27 @@ struct gps_sat_t {
 	uint32_t signal;
 };
 
+struct pps_dbg_t {
+	uint32_t status;
+	uint32_t dac_val;
+	int32_t phase_offset;
+	int32_t pps_offset;
+	uint32_t pps_status;
+	uint32_t traim_status;
+	uint32_t temp;
+};
+
 extern struct gps_pos_t gps_pos;
 extern struct gps_extstatus_t gps_extstatus;
 extern struct gps_status_t gps_status;
 extern struct gps_clock_t gps_clock;
 extern struct gps_sat_t gps_sat[8]; 
 extern uint32_t gps_survey_left;
+extern struct pps_dbg_t pps_dbg;
 
 void gps_init(void);
 uint32_t gps_getunixtime(void);
 void gps_survey_start(void);
+void gps_periodic(void);
 
 #endif

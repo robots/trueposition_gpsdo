@@ -48,12 +48,13 @@ void LCDI2C_init(uint8_t lcd_Addr,uint8_t lcd_cols,uint8_t lcd_rows)
   lcdi2c.rows = lcd_rows;
   lcdi2c.backlightval = LCD_NOBACKLIGHT;
 
-  i2c_init();
+  i2c_init(100000);
   lcdi2c.displayfunction = LCD_4BITMODE | LCD_1LINE | LCD_5x8DOTS;
   LCDI2C_begin(lcd_cols, lcd_rows);
 }
 
 void LCDI2C_begin(uint8_t cols, uint8_t lines) {//, uint8_t dotsize) {
+	(void)cols;
 	if (lines > 1) {
 		lcdi2c.displayfunction |= LCD_2LINE;
 	}
@@ -243,7 +244,7 @@ void LCDI2C_write4bits(uint8_t value) {
 }
 
 void LCDI2C_expanderWrite(uint8_t _data){
-	i2c_start(I2C_Direction_Transmitter, lcdi2c.Addr);
+	i2c_start(I2C_DIR_TX, lcdi2c.Addr);
 	i2c_write_byte((int)(_data) | lcdi2c.backlightval);
 	i2c_stop();
 }
@@ -281,9 +282,9 @@ void LCDI2C_load_custom_character(uint8_t char_num, uint8_t *rows){
 
 void LCDI2C_setBacklight(uint8_t new_val){
 	if(new_val){
-		backlight();		// turn backlight on
+		LCDI2C_backlight();		// turn backlight on
 	}else{
-		noBacklight();		// turn backlight off
+		LCDI2C_noBacklight();		// turn backlight off
 	}
 }
 
